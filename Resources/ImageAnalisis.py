@@ -7,7 +7,7 @@ from PIL import Image
 import os
 
 if not os.path.isfile("Im.png"):
-    path = '/Users/Diego/Desktop/Projet lutherie 1/colorcircle.jpg'
+    path = '/Users/Diego/Desktop/Projet lutherie 1/RGBplayer/4.jpg'
     im = Image.open(path)
 
     #Image size

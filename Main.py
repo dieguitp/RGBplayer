@@ -1,4 +1,5 @@
 import wx
+from Resources.constants import *
 from Resources.Audio import *
 from Resources.CtrlPanel import *
 from Resources.ImageAnalisis import *
@@ -11,11 +12,9 @@ class MyFrame(wx.Frame):
         box = wx.BoxSizer(wx.HORIZONTAL)
         self.tab = SndTable(None)
         self.src = Looper(self.tab)
-        self.fxr = [Fx(self.src).stop() for i in range(1)]
-        self.fxg = [Fx(self.src).stop() for i in range(1)]
-        self.fxb = [Fx(self.src).stop() for i in range(1)]
-        self.control = ControlPanel(self.panel, fxr=self.fxr, fxg=self.fxg, fxb=self.fxb)
-        self.MainPanel = MainPanel(self.panel, size=imsize, fxr=self.fxr, fxg=self.fxg, fxb=self.fxb)
+        self.fx= [Fx(self.src).stop() for i in range(MAX_NUM_LINES)]
+        self.control = ControlPanel(self.panel, fxp1=self.fx, fxp2=self.fx, fxp3=self.fx)
+        self.MainPanel = MainPanel(self.panel, size=imsize, fxp1=self.fx, fxp2=self.fx, fxp3=self.fx)
         box.Add(self.control, 0, wx.ALL, 5)
         box.Add(self.MainPanel, 1, wx.ALL, 0)
         self.panel.SetSizerAndFit(box)
