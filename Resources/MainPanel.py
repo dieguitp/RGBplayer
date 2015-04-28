@@ -26,7 +26,7 @@ class MainPanel(wx.Panel):
         self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_TIMER, self.OnTimer)
-        
+                
         self.timer = wx.Timer(self)
 
     def OnEraseBackground(self, evt):
@@ -40,6 +40,8 @@ class MainPanel(wx.Panel):
             rect = wx.Rect(x-5, y-5, 10, 10)
             if rect.Contains(pos):
                 which = i
+                self.fxp1[i].volume(0)
+
         if which != -1:
             l = []
             for i, line in enumerate(self.points):
@@ -60,6 +62,7 @@ class MainPanel(wx.Panel):
                     self.selectedPos = line[0]
                     self.selectedLine = line
                     return
+            
         if len(self.points) < MAX_NUM_LINES:
             # une nouvelle traj start le FX
             pos = len(self.points)
@@ -67,6 +70,7 @@ class MainPanel(wx.Panel):
                 self.fxp1[pos].out()
             self.points.append([])
             self.current = len(self.points) - 1
+            self.fxp1[self.current].volume(1)
             self.tpos.append(0)
             self.points[self.current].append(evt.GetPosition())
             self.CaptureMouse()
@@ -77,17 +81,62 @@ class MainPanel(wx.Panel):
         if self.HasCapture():
             self.ReleaseMouse()
 
+    def clip_simple(self, pts):
+        w, h = self.GetSize()
+        rect = wx.Rect(0, 0, w, h)
+        for p in pts:
+            if not rect.Contains(p):
+                return False
+        return True
+
+    def clip_pt(self, pt):
+        w, h = self.GetSize()
+        if pt[0] < 2:
+            pt[0] = 2
+        elif pt[0] > w-2:
+            pt[0] = w-2
+        if pt[1] < 2:
+            pt[1] = 2
+        elif pt[1] > h-2:
+            pt[1] = h-2
+        return pt
+
+    def clip(self, diff):
+        w, h = self.GetSize()
+        min_x, max_x, min_y, max_y = diff[0], diff[0], diff[1], diff[1]
+        for pt in self.selectedLine:
+            p = pt + diff
+            if p[0] < 0:
+                min_x = max(min_x, -pt[0])
+            elif p[0] > w:
+                max_x = min(max_x, w - pt[0])
+            if p[1] < 0:
+                min_y = max(min_y, -pt[1])
+            elif p[1] > h:
+                max_y = min(max_y, h - pt[1])
+        if diff[0] < 0:
+            x = min_x
+        else:
+            x = max_x
+        if diff[1] < 0:
+            y = min_y
+        else:
+            y = max_y
+        diff = wx.Point(x, y)
+        l = []
+        for pt in self.selectedLine:
+            l.append(pt + diff)
+        return l
+
     def OnMotion(self, evt):
         if self.HasCapture():
             if self.selected != None:
                 pos = evt.GetPosition()
                 diff = pos - self.selectedPos
-                l = []
-                for pt in self.selectedLine:
-                    l.append(pt + diff)
+                l = self.clip(diff)
                 self.points[self.selected] = l
             else:
-                self.points[self.current].append(evt.GetPosition())
+                self.points[self.current].append(self.clip_pt(evt.GetPosition()))
             self.Refresh()
         
     def OnPaint(self, evt):
@@ -98,14 +147,15 @@ class MainPanel(wx.Panel):
         dc.DrawBitmap(self.bg, 0, 0)
         dc.SetPen(wx.Pen("#FF0000", width=5))
         dc.SetBrush(wx.Brush("#FF0000", style=wx.TRANSPARENT))
+
         for i in range(len(self.points)):
             if len(self.points[i]) >= 2:
                 x, y = self.points[i][0].Get()
                 dc.DrawRoundedRectangle(x-5, y-5, 10, 10, 1)
                 dc.DrawLines(self.points[i])
                 pos = self.points[i][self.tpos[i]]
-                dc.DrawCirclePoint(pos, 6)
-                
+                dc.DrawCirclePoint(pos, 6)                
+        
     def OnTimer(self,evt):
         for i in range(len(self.points)):
             if len(self.points[i]) >= 2:

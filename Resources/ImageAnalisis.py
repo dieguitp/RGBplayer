@@ -54,3 +54,4 @@ if not os.path.isfile("Im.png"):
 #Imimage size
 Im = Image.open('Im.png')
 imsize = Im.size
+print imsize

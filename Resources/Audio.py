@@ -1,9 +1,48 @@
 import wx
 from pyo import *
 
+class audioSrc:
+    def __init__(self, strg):
+        self.mic = Input([0,1])
+        self.strg = strg
+        self.dur = 0
+        self.tabfile = SndTable('ReggaeGuitarRhythms01_CDG.wav')
+        self.srcfile = Looper(self.tabfile, dur=0)
+        self.tabclip = NewTable(2,chnls=2)
+        self.tabrec = TableRec(self.mic, table=self.tabclip, fadetime=0.1)
+        self.tf = TrigFunc(self.tabrec["trig"], self.setClipTable)
+        self.output = Sig(self.srcfile)
+        
+    def starttabrec(self):
+        self.tabrec.play()
+
+    def setSound(self,path):
+        self.path = path
+        self.tabfile.setSound(self.path)
+        dur = self.tabfile.getDur()
+        self.srcfile.setDur(dur)
+        return self
+
+    def setClipTable(self):
+        self.srcfile.setTable(self.tabclip)
+
+    def srcout(self, strg):
+        self.strg = strg
+        if self.strg == 'Sound File':
+            self.srcfile.setTable(self.tabfile)
+            dur = self.tabfile.getDur()
+            self.output.value = self.srcfile
+        elif self.strg == 'Record Clip':
+            dur = self.tabclip.getDur()
+            self.output.value = self.srcfile
+        elif self.strg == 'Live from microphone':
+            dur = 1
+            self.output.value = self.mic
+        self.srcfile.setDur(dur)
+
 class Fx:
     def __init__(self,input): #,fxr,fxg,fxb):
-        self.input = input
+        self.input = Sig(input, mul=0)
         self.fm = Fm(self.input, ratio1=0.5, ratio2=1.2, index1=1, index2=2).stop()
         self.freqbp = FreqBP(self.input, 0.5, 0.5, 0.5).stop()
         self.disto = disto(self.input,0.5, 0.5, 0.5).stop()
@@ -12,11 +51,12 @@ class Fx:
         self.ring = Ring(self.input,0.5, 0.5, 0.5).stop()
         self.flanger = Flanger(self.input,0.5, 0.5, 0.5).stop()
         self.vocoder = Voc(self.input,0.5, 0.5, 0.5).stop()
-
+        self.phaser = phaser(self.input,0.5, 0.5, 0.5).stop()
+        
         self.curfx = "-- None --"
         self.fx_dict = {'FM': self.fm, 'BP': self.freqbp, 'Distortion': self.disto
         , 'Reverb': self.reverb, 'Delay':self.delai, 'Ring Modulation':self.ring, 'Flanger':self.flanger,
-        'Vocoder':self.vocoder}
+        'Vocoder':self.vocoder, 'Phaser':self.phaser}
 
     def setvalR(self, x):
         if self.curfx != "-- None --":
@@ -40,11 +80,15 @@ class Fx:
             if self.curfx != "-- None --":
                 self.fx_dict[self.curfx].stop()
             if str != "-- None --":
+                print str
                 self.fx_dict[str].out()
         else:
             if str != "-- None --":
                 self.fx_dict[str].stop()
         self.curfx = str
+
+    def volume(self, x):
+        self.input.mul = x
 
     def stop(self):
         if self.curfx != "-- None --":
@@ -55,7 +99,7 @@ class Fx:
         if self.curfx != "-- None --":
             self.fx_dict[self.curfx].out()
         return self
-
+    
 class FxBase:
     def __init__(self, input):
         self.input = InputFader(input)
@@ -121,7 +165,7 @@ class FreqBP(FxBase):
         self.val3 = SigTo(valp3, 0.05, valp3)
         self.f = Resonx(self.input, self.sca, q=self.val2,stages=2)
         self.freq = WGVerb(self.f*self.val3, .95,bal=1)
-        self.comp = Compress(self.f+self.freq,ratio=4)
+        self.comp = Compress(self.f+self.freq,ratio=4, mul=2)
     def stop(self):
         self.playing = False
         self.comp.stop()
@@ -271,3 +315,23 @@ class Voc(FxBase):
         self.playing = True
         self.voc.out(out)
         return self
+        
+class phaser(FxBase):
+    def __init__(self, input, valp1, valp2, valp3):
+        FxBase.__init__(self, input)
+        self.val1 = SigTo(valp1, 0.05, valp1)
+        self.val2 = SigTo(valp2, 0.05, valp2)
+        self.val3 = SigTo(valp3, 0.05, valp3)
+        self.sca = Scale(self.val1,outmin=250, outmax=4000, exp = 2)
+        self.pha = Phaser(self.input,self.sca, feedback =self.val2*0.5)
+        
+    def stop(self):
+        self.playing = False
+        self.pha.stop()
+        return self
+        
+    def out(self,out=0):
+        self.playing = True
+        self.pha.out(out)
+        return self
+
