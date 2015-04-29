@@ -2,13 +2,11 @@ import wx, os
 from constants import *
 
 class MainPanel(wx.Panel):
-    def __init__(self, parent, bg_img='Im.png', size=wx.DefaultSize, fxp1=None, fxp2=None, fxp3=None):
+    def __init__(self, parent, bg_img='Im.png', size=wx.DefaultSize, fxp=None):
         wx.Panel.__init__(self, parent=parent)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.SetMinSize(size)
-        self.fxp1 = fxp1
-        self.fxp2 = fxp2
-        self.fxp3 = fxp3
+        self.fxp = fxp
         self.points = []
         self.current = 0
         self.tpos = []
@@ -40,7 +38,7 @@ class MainPanel(wx.Panel):
             rect = wx.Rect(x-5, y-5, 10, 10)
             if rect.Contains(pos):
                 which = i
-                self.fxp1[i].volume(0)
+                self.fxp[i].volume(0)
 
         if which != -1:
             l = []
@@ -66,11 +64,11 @@ class MainPanel(wx.Panel):
         if len(self.points) < MAX_NUM_LINES:
             # une nouvelle traj start le FX
             pos = len(self.points)
-            if self.fxp1[pos] != None:
-                self.fxp1[pos].out()
+            if self.fxp[pos] != None:
+                self.fxp[pos].out()
             self.points.append([])
             self.current = len(self.points) - 1
-            self.fxp1[self.current].volume(1)
+            self.fxp[self.current].volume(1)
             self.tpos.append(0)
             self.points[self.current].append(evt.GetPosition())
             self.CaptureMouse()
@@ -163,10 +161,10 @@ class MainPanel(wx.Panel):
                 r = self.img.GetRed(pos[0], pos[1])
                 g = self.img.GetGreen(pos[0], pos[1])
                 b = self.img.GetBlue(pos[0], pos[1])
-                if self.fxp1[i] != None:
-                    self.fxp1[i].setvalR(r)
-                    self.fxp2[i].setvalG(g)
-                    self.fxp3[i].setvalB(b)
+                if self.fxp[i] != None:
+                    self.fxp[i].setvalR(r)
+                    self.fxp[i].setvalG(g)
+                    self.fxp[i].setvalB(b)
                 self.tpos[i] += 1
                 if self.tpos[i] >= len(self.points[i]):
                     self.tpos[i] = 0

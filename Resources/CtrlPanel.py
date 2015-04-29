@@ -7,14 +7,12 @@ wildcard = "AIF (*.aif)|*.aif;*.aiff|"     \
            "WAV (*.wav)|*.wav;*.wave;*.WAV|" \
 
 class ControlPanel(wx.Panel):
-    def __init__(self, parent, fxp1=None, fxp2=None, fxp3=None):
+    def __init__(self, parent, fxp=None):
         wx.Panel.__init__(self, parent)
         self.StartStopText = wx.StaticText(self, id=-1, label="Path", pos=(10,12), size=wx.DefaultSize)
         self.StartStop = wx.ToggleButton(self, id=-1, label="Start / Stop", pos=(2,28), size=wx.DefaultSize)
         self.StartStop.Bind(wx.EVT_TOGGLEBUTTON, self.handleAudio)
-        self.fxp1 = fxp1
-        self.fxp2 = fxp2
-        self.fxp3 = fxp3    
+        self.fxp = fxp   
         Effects= ['-- None --', 'FM', 'BP', 'Distortion', 'Reverb', 'Delay', 'Ring Modulation',
          'Flanger', 'Vocoder', 'Phaser']
         
@@ -34,9 +32,8 @@ class ControlPanel(wx.Panel):
         self.c.Bind(wx.EVT_BUTTON, self.OnButtonRec, self.c)
         self.c.Hide()
 
-        self.m = wx.ToggleButton(self, -1, "Arm microphone", (2,58))
-        self.m.Bind(wx.EVT_BUTTON, self.MicConnect, self.m)
-        self.m.Hide()
+        self.r = wx.ToggleButton(self, -1, "Rec Start", (25,300))
+        self.r.Bind(wx.EVT_TOGGLEBUTTON, self.handleRec, self.r)
 
         self.slidervol = wx.Slider(self, -1, 1000, 0, 1000, (50, 200), (50, 100),
         wx.SL_VERTICAL | wx.SL_INVERSE)
@@ -75,24 +72,25 @@ class ControlPanel(wx.Panel):
             
     def changeFx(self, evt):
         for i in range(1):
-            self.fxp1[i].changeFx(evt.GetString())
+            self.fxp[i].changeFx(evt.GetString())
             
     def OnButtonRec(self, evt):
         self.GetParent().GetParent().Audio.starttabrec()
         
-    def MicConnect(self, evt):
-        x=1
+    def handleRec(self, evt):
+        if evt.GetInt() == 1:
+            s.recstart('test')
+        else:
+            s.recstop()
             
     def changeSrc(self, evt):
         self.GetParent().GetParent().Audio.srcout(evt.GetString())
         if evt.GetString() == 'Sound File':
             self.b.Show()
             self.c.Hide()
-            self.m.Hide()
         elif evt.GetString() == 'Record Clip':
             self.c.Show()
             self.b.Hide()
-            self.m.Hide()
         elif evt.GetString() == 'Live from microphone':
             #self.m.Show()
             self.b.Hide()
