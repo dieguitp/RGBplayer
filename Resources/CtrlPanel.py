@@ -79,7 +79,7 @@ class ControlPanel(wx.Panel):
         
     def handleRec(self, evt):
         if evt.GetInt() == 1:
-            s.recstart('test')
+            s.recstart('test.wav')
         else:
             s.recstop()
             
